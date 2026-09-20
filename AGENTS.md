@@ -129,6 +129,11 @@ this workflow. A future npm release workflow must be separate, gated by a
 GitHub Release, and use npm trusted publishing/OIDC rather than a long-lived
 write token.
 
+Pin every third-party GitHub Action to its immutable, full 40-character commit
+SHA. Keep the corresponding release tag in an inline comment so dependency
+updates remain understandable. Never reference an action by a mutable branch or
+version tag alone.
+
 ## Architecture
 
 ### Public boundary
