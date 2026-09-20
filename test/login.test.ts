@@ -11,13 +11,13 @@ const endpoints = {
   authorization: "https://login.test/authorize",
   token: "https://login.test/token",
   user: "https://slcm.test/user",
+  activePeriod: "https://slcm.test/class/period",
 };
 
 test("login completes PKCE, obtains x-app-token, and exposes metadata", async () => {
   const calls: Array<{ url: string; init: RequestInit }> = [];
   let expectedState = "";
   const xAppToken = jwt({
-    activePeriod: "2026-1",
     userInfo: {
       username: "student",
       full_name: "Student Example",
@@ -73,6 +73,13 @@ test("login completes PKCE, obtains x-app-token, and exposes metadata", async ()
       return json({ data: { userToken: xAppToken } });
     }
 
+    if (url === endpoints.activePeriod) {
+      assert.equal(header(init.headers, "x-app-token"), xAppToken);
+      return json({
+        data: [{ year: 2026, term: 1, period: "2026-1" }],
+      });
+    }
+
     throw new Error(`Unexpected URL: ${url}`);
   };
 
@@ -97,7 +104,7 @@ test("login completes PKCE, obtains x-app-token, and exposes metadata", async ()
     Authorization: "Bearer access-token",
     "x-app-token": xAppToken,
   });
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 5);
 });
 
 test("session refresh replaces tokens and x-app-token", async () => {
@@ -136,6 +143,11 @@ test("session refresh replaces tokens and x-app-token", async () => {
       const refreshed = header(init.headers, "authorization").endsWith("access-2");
       return json({
         data: { userToken: refreshed ? refreshedXAppToken : initialXAppToken },
+      });
+    }
+    if (url === endpoints.activePeriod) {
+      return json({
+        data: [{ year: 2026, term: 1, period: "2026-1" }],
       });
     }
     throw new Error(`Unexpected URL: ${url}`);

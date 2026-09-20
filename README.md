@@ -92,10 +92,11 @@ such as `dates_rooms`, `periods`, and `lecturers` are returned as empty arrays.
 Trailing spaces in course names and lecturer names are removed.
 
 The `all-periods` response has no active flag and may list a future semester
-first. `getActivePeriod()` uses the authoritative `activePeriod` returned by the
-login session summary, then matches it against `all-periods` for the complete
-period object. It never infers the active period from array order or the current
-date. Applications may also pass a period explicitly:
+first. During login, the SDK loads the authoritative period summary from
+`/akademik/api/v1/class/period`. `getActivePeriod()` matches that value against
+`all-periods` for the complete period object. It never infers the active period
+from array order or the current date. Applications may also pass a period
+explicitly:
 
 ```ts
 const schedule = await session.getSchedule({

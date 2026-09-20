@@ -7,6 +7,7 @@ const endpoints = {
   authorization: "https://login.test/authorize",
   token: "https://login.test/token",
   user: "https://slcm.test/user",
+  activePeriod: "https://slcm.test/class/period",
   periods: "https://slcm.test/all-periods",
   classTable: "https://slcm.test/class/table",
 };
@@ -43,11 +44,12 @@ test("schedule uses login activePeriod even when a future period is listed first
     }
     if (url.href === endpoints.user) {
       assert.equal(new Headers(init.headers).get("authorization"), "Bearer access");
+      return Response.json({ data: { userToken: xAppToken } });
+    }
+    if (url.href === endpoints.activePeriod) {
+      assertAuthHeaders(init, xAppToken);
       return Response.json({
-        data: {
-          userToken: xAppToken,
-          activePeriod: { year: 2026, term: 1, period: "2026-1" },
-        },
+        data: [{ year: 2026, term: 1, period: "2026-1" }],
       });
     }
     if (url.href === endpoints.periods) {

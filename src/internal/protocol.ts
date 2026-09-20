@@ -114,6 +114,21 @@ export function parseUserSessionResponse(value: unknown): ParsedUserSession {
   return { xAppToken: token, user, activePeriod };
 }
 
+export function parseActivePeriodResponse(value: unknown): SlcmActivePeriod {
+  if (!isRecord(value) || !Array.isArray(value.data)) {
+    throw new SlcmProtocolError(
+      "SLCM class/period returned an invalid response.",
+    );
+  }
+  const active = parseActivePeriod(value.data[0]);
+  if (active === null) {
+    throw new SlcmProtocolError(
+      "SLCM class/period did not return an active period.",
+    );
+  }
+  return active;
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const encodedPayload = token.split(".")[1];
   if (!encodedPayload) return null;

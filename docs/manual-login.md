@@ -159,8 +159,9 @@ x-app-token: <data.userToken>
 The response contains `data[]` entries with `year`, `term`, `period`, and
 `value`. It does not contain an active flag and may put a future semester first,
 so do not blindly assume `data[0]` is active. Use `activePeriod` from the login
-session summary as the source of truth, then find the matching entry in this
-list.
+session summary (`GET /akademik/api/v1/class/period`) as the source of truth,
+then find the matching entry in this list. That request also requires both
+authentication headers.
 
 Once a period is chosen, request each supported class type separately:
 

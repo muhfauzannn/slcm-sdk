@@ -20,6 +20,7 @@ import {
   authenticationFailure,
   extractLoginFormAction,
   parseInitialTokenResponse,
+  parseActivePeriodResponse,
   parseRefreshTokenResponse,
   parseUserSessionResponse,
 } from "./internal/protocol.js";
@@ -311,7 +312,37 @@ export class SlcmClient {
     const parsed = parseUserSessionResponse(
       await readJson(response, "SLCM /user"),
     );
-    return { tokens, ...parsed };
+    const activePeriod =
+      parsed.activePeriod ??
+      (await this.#loadActivePeriod(tokens, parsed.xAppToken, signal));
+    return { tokens, ...parsed, activePeriod };
+  }
+
+  async #loadActivePeriod(
+    tokens: SlcmTokens,
+    xAppToken: string,
+    signal?: AbortSignal,
+  ): Promise<SlcmActivePeriod> {
+    const response = await request(
+      this.#options.request,
+      "Load active SLCM period",
+      this.#options.endpoints.activePeriod,
+      {
+        redirect: "manual",
+        headers: {
+          Authorization: `${tokens.tokenType} ${tokens.accessToken}`,
+          "x-app-token": xAppToken,
+          "user-agent": this.#options.userAgent,
+        },
+        ...(signal ? { signal } : {}),
+      },
+    );
+    if (!response.ok) {
+      throw responseError("Loading the active SLCM period", response);
+    }
+    return parseActivePeriodResponse(
+      await readJson(response, "SLCM class/period"),
+    );
   }
 }
 

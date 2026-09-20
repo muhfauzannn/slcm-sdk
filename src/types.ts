@@ -11,6 +11,7 @@ export interface SlcmEndpoints {
   authorization: string;
   token: string;
   user: string;
+  activePeriod: string;
   periods: string;
   classTable: string;
 }
