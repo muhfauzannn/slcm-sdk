@@ -189,3 +189,22 @@ pnpm run ci
 
 `pnpm run ci` runs strict TypeScript checks, unit tests, and both ESM/CommonJS
 production builds.
+
+## Live login verification
+
+The automated tests use mocked provider responses. To verify the current live
+SLCM portal, provide credentials through temporary environment variables and
+run the bundled smoke test:
+
+```bash
+read "SSO_UI_USERNAME?SSO UI username: "
+read -s "SSO_UI_PASSWORD?SSO UI password: "
+echo
+
+export SSO_UI_USERNAME SSO_UI_PASSWORD
+pnpm verify:login
+unset SSO_UI_USERNAME SSO_UI_PASSWORD
+```
+
+The verifier prints only account metadata and boolean token checks. It never
+prints the password or token values.

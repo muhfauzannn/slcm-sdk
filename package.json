@@ -18,7 +18,8 @@
     "dist",
     "docs",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "verify-login.mjs"
   ],
   "engines": {
     "node": ">=20"
@@ -28,6 +29,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/**/*.test.ts",
     "ci": "pnpm typecheck && pnpm test && pnpm build",
+    "verify:login": "pnpm build && node verify-login.mjs",
     "prepublishOnly": "pnpm run ci"
   },
   "keywords": [
