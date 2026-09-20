@@ -22,10 +22,14 @@ export class SlcmSession {
   #bundle: SessionBundle;
   readonly #runtime: SessionRuntime;
 
-  /** @internal Sessions are created by SlcmClient.login(). */
-  constructor(bundle: SessionBundle, runtime: SessionRuntime) {
+  private constructor(bundle: SessionBundle, runtime: SessionRuntime) {
     this.#bundle = bundle;
     this.#runtime = runtime;
+  }
+
+  /** @internal Sessions are created by SlcmClient.login(). */
+  static create(bundle: SessionBundle, runtime: SessionRuntime): SlcmSession {
+    return new SlcmSession(bundle, runtime);
   }
 
   get tokens(): Readonly<SlcmTokens> {

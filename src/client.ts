@@ -65,7 +65,7 @@ export class SlcmClient {
       expiresAt: bundle.tokens.expiresAt,
     });
 
-    return new SlcmSession(bundle, {
+    return SlcmSession.create(bundle, {
       refreshMarginMs: this.#options.refreshMarginMs,
       refresh: async (tokens, signal) => this.#refresh(tokens, signal),
     });
