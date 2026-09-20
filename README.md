@@ -69,6 +69,50 @@ The current version deliberately keeps arbitrary endpoint calls outside the SDK
 until those endpoint contracts are implemented and typed. This prevents a
 generic request helper from becoming an unstable public API.
 
+## Reading periods and class schedules
+
+After login, a session can load the academic periods and the three SLCM class
+categories:
+
+```ts
+const periods = await session.getPeriods();
+const activePeriod = await session.getActivePeriod();
+const schedule = await session.getSchedule({ period: activePeriod });
+
+console.log(activePeriod.period); // for example, "2026-1"
+console.log(schedule.classes.length);
+console.log(schedule.byType.internal);
+console.log(schedule.byType.group);
+console.log(schedule.byType.external);
+```
+
+`getSchedule()` requests `internal`, `group`, and `external` concurrently. Each
+class has a normalized camel-case shape and a `type` field. Nullable SLCM arrays
+such as `dates_rooms`, `periods`, and `lecturers` are returned as empty arrays.
+Trailing spaces in course names and lecturer names are removed.
+
+The `all-periods` response has no active flag and may list a future semester
+first. `getActivePeriod()` uses the authoritative `activePeriod` returned by the
+login session summary, then matches it against `all-periods` for the complete
+period object. It never infers the active period from array order or the current
+date. Applications may also pass a period explicitly:
+
+```ts
+const schedule = await session.getSchedule({
+  period: { year: 2026, term: 1, period: "2026-1", value: "" },
+  language: "id",
+});
+```
+
+For one category only:
+
+```ts
+const internal = await session.getClassTable({
+  type: "internal",
+  period: activePeriod,
+});
+```
+
 ## Refreshing a session
 
 ```ts
@@ -146,6 +190,12 @@ session, so one client can safely log in multiple accounts concurrently.
 - `getAuthHeaders(signal?)` — return both authentication headers, refreshing
   first when needed.
 - `snapshot()` — return a detached snapshot suitable for short-lived transfer.
+- `getPeriods(signal?)` — list all periods returned by SLCM.
+- `activePeriod` — authoritative active-period identity from the login summary.
+- `getActivePeriod(options?)` — match the login summary's active period against
+  `all-periods`.
+- `getClassTable(options)` — load one class category for a period.
+- `getSchedule(options?)` — load and combine all three class categories.
 
 Treat every token and snapshot as a secret. Do not send them to a browser,
 include them in logs, or store them without appropriate encryption and access
@@ -206,5 +256,5 @@ pnpm verify:login
 unset SSO_UI_USERNAME SSO_UI_PASSWORD
 ```
 
-The verifier prints only account metadata and boolean token checks. It never
-prints the password or token values.
+The verifier prints account metadata, boolean token checks, the selected active
+period, and class counts. It never prints the password or token values.

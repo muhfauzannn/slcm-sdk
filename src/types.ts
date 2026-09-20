@@ -11,6 +11,8 @@ export interface SlcmEndpoints {
   authorization: string;
   token: string;
   user: string;
+  periods: string;
+  classTable: string;
 }
 
 export interface SlcmClientOptions {
@@ -63,4 +65,65 @@ export interface SlcmSessionSnapshot {
   user: SlcmUserInfo | null;
   orgCode: string | null;
   role: string | null;
+  activePeriod: SlcmActivePeriod | null;
+}
+
+export type SlcmClassType = "internal" | "group" | "external";
+export type SlcmLanguage = "id" | "en";
+
+export interface SlcmPeriod {
+  year: number;
+  term: number;
+  period: string;
+  value: string;
+}
+
+export interface SlcmActivePeriod {
+  year: number;
+  term: number;
+  period: string;
+}
+
+export interface SlcmClass {
+  type: SlcmClassType;
+  classCode: number;
+  className: string;
+  language: string;
+  courseCode: string;
+  courseName: string;
+  curriculumCode: string;
+  organizationCode: string;
+  offeredForTerm: number;
+  credits: number;
+  isSpecial: boolean;
+  hidden: string;
+  dateRanges: string[];
+  meetings: string[];
+  lecturers: string[];
+  prerequisites: string;
+  editable: boolean;
+  deletable: boolean;
+}
+
+export interface SlcmClassTableOptions {
+  type: SlcmClassType;
+  period?: SlcmPeriod;
+  language?: SlcmLanguage;
+  signal?: AbortSignal;
+}
+
+export interface SlcmScheduleOptions {
+  period?: SlcmPeriod;
+  language?: SlcmLanguage;
+  signal?: AbortSignal;
+}
+
+export interface SlcmActivePeriodOptions {
+  signal?: AbortSignal;
+}
+
+export interface SlcmSchedule {
+  period: SlcmPeriod;
+  classes: SlcmClass[];
+  byType: Record<SlcmClassType, SlcmClass[]>;
 }

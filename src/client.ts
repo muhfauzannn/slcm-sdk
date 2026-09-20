@@ -18,14 +18,14 @@ import { createPkceAuthorization } from "./internal/crypto.js";
 import { request, type RequestContext } from "./internal/http.js";
 import {
   authenticationFailure,
-  decodeXAppToken,
   extractLoginFormAction,
   parseInitialTokenResponse,
   parseRefreshTokenResponse,
-  parseXAppTokenResponse,
+  parseUserSessionResponse,
 } from "./internal/protocol.js";
-import { SlcmSession } from "./session.js";
+import { SlcmSession, type SessionBundle } from "./session.js";
 import type {
+  SlcmActivePeriod,
   SlcmClientOptions,
   SlcmEndpoints,
   SlcmLoginOptions,
@@ -37,6 +37,7 @@ interface AuthenticatedBundle {
   tokens: SlcmTokens;
   xAppToken: string;
   user: SlcmUserInfo | null;
+  activePeriod: SlcmActivePeriod | null;
 }
 
 interface ResolvedOptions {
@@ -68,7 +69,45 @@ export class SlcmClient {
     return SlcmSession.create(bundle, {
       refreshMarginMs: this.#options.refreshMarginMs,
       refresh: async (tokens, signal) => this.#refresh(tokens, signal),
+      getJson: async (current, endpoint, query, signal) =>
+        this.#getJson(current, endpoint, query, signal),
     });
+  }
+
+  async #getJson(
+    current: SessionBundle,
+    endpoint: "periods" | "classTable",
+    query: Readonly<Record<string, string>>,
+    signal?: AbortSignal,
+  ): Promise<{ bundle: AuthenticatedBundle; value: unknown }> {
+    const url = new URL(this.#options.endpoints[endpoint]);
+    for (const [name, value] of Object.entries(query)) {
+      url.searchParams.set(name, value);
+    }
+
+    const send = async (bundle: SessionBundle): Promise<Response> =>
+      request(this.#options.request, `GET ${url.pathname}`, url, {
+        redirect: "manual",
+        headers: {
+          Authorization: `${bundle.tokens.tokenType} ${bundle.tokens.accessToken}`,
+          "x-app-token": bundle.xAppToken,
+          "user-agent": this.#options.userAgent,
+        },
+        ...(signal ? { signal } : {}),
+      });
+
+    let bundle: AuthenticatedBundle = current;
+    let response = await send(bundle);
+    if (response.status === 401 || response.status === 403) {
+      bundle = await this.#refresh(bundle.tokens, signal);
+      response = await send(bundle);
+    }
+    if (!response.ok) throw responseError(`GET ${url.pathname}`, response);
+
+    return {
+      bundle,
+      value: await readJson(response, url.pathname),
+    };
   }
 
   async #login(options: SlcmLoginOptions): Promise<AuthenticatedBundle> {
@@ -269,10 +308,10 @@ export class SlcmClient {
     );
     if (!response.ok) throw responseError("Loading the SLCM user session", response);
 
-    const xAppToken = parseXAppTokenResponse(
+    const parsed = parseUserSessionResponse(
       await readJson(response, "SLCM /user"),
     );
-    return { tokens, xAppToken, user: decodeXAppToken(xAppToken) };
+    return { tokens, ...parsed };
   }
 }
 

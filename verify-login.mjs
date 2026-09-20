@@ -20,6 +20,8 @@ const client = new SlcmClient({
 
 try {
   const session = await client.login({ username, password });
+  const activePeriod = await session.getActivePeriod();
+  const schedule = await session.getSchedule({ period: activePeriod });
 
   console.log({
     success: true,
@@ -29,6 +31,13 @@ try {
     role: session.role,
     hasAccessToken: session.tokens.accessToken.length > 0,
     hasXAppToken: session.xAppToken.length > 0,
+    activePeriod: activePeriod.period,
+    classCounts: {
+      internal: schedule.byType.internal.length,
+      group: schedule.byType.group.length,
+      external: schedule.byType.external.length,
+      total: schedule.classes.length,
+    },
   });
 } catch (error) {
   console.error({

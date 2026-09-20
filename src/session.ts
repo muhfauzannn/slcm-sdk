@@ -1,13 +1,27 @@
 import type {
+  SlcmActivePeriod,
+  SlcmActivePeriodOptions,
+  SlcmClass,
+  SlcmClassTableOptions,
+  SlcmPeriod,
+  SlcmSchedule,
+  SlcmScheduleOptions,
   SlcmSessionSnapshot,
   SlcmTokens,
   SlcmUserInfo,
 } from "./types.js";
+import {
+  parseClassTableResponse,
+  parsePeriodsResponse,
+  resolveActivePeriod,
+} from "./internal/schedule-protocol.js";
 
-interface SessionBundle {
+/** @internal */
+export interface SessionBundle {
   tokens: SlcmTokens;
   xAppToken: string;
   user: SlcmUserInfo | null;
+  activePeriod: SlcmActivePeriod | null;
 }
 
 interface SessionRuntime {
@@ -16,6 +30,12 @@ interface SessionRuntime {
     signal?: AbortSignal,
   ): Promise<SessionBundle>;
   refreshMarginMs: number;
+  getJson(
+    bundle: SessionBundle,
+    endpoint: "periods" | "classTable",
+    query: Readonly<Record<string, string>>,
+    signal?: AbortSignal,
+  ): Promise<{ bundle: SessionBundle; value: unknown }>;
 }
 
 export class SlcmSession {
@@ -52,6 +72,10 @@ export class SlcmSession {
     return stringMetadata(this.#bundle.user?.role);
   }
 
+  get activePeriod(): Readonly<SlcmActivePeriod> | null {
+    return this.#bundle.activePeriod ? { ...this.#bundle.activePeriod } : null;
+  }
+
   get isExpired(): boolean {
     return Date.now() >= this.#bundle.tokens.expiresAt;
   }
@@ -85,7 +109,84 @@ export class SlcmSession {
       user: this.#bundle.user ? { ...this.#bundle.user } : null,
       orgCode: this.orgCode,
       role: this.role,
+      activePeriod: this.activePeriod ? { ...this.activePeriod } : null,
     };
+  }
+
+  async getPeriods(signal?: AbortSignal): Promise<SlcmPeriod[]> {
+    const value = await this.#getJson("periods", {}, signal);
+    return parsePeriodsResponse(value);
+  }
+
+  async getActivePeriod(
+    options: SlcmActivePeriodOptions = {},
+  ): Promise<SlcmPeriod> {
+    const periods = await this.getPeriods(options.signal);
+    return resolveActivePeriod(periods, this.#bundle.activePeriod);
+  }
+
+  async getClassTable(options: SlcmClassTableOptions): Promise<SlcmClass[]> {
+    const period =
+      options.period ??
+      (await this.getActivePeriod(
+        options.signal ? { signal: options.signal } : {},
+      ));
+    const value = await this.#getJson(
+      "classTable",
+      {
+        type: options.type,
+        year: String(period.year),
+        term: String(period.term),
+        lang: options.language ?? "id",
+      },
+      options.signal,
+    );
+    return parseClassTableResponse(value, options.type);
+  }
+
+  async getSchedule(options: SlcmScheduleOptions = {}): Promise<SlcmSchedule> {
+    const period =
+      options.period ??
+      (await this.getActivePeriod(
+        options.signal ? { signal: options.signal } : {},
+      ));
+    const shared = {
+      period,
+      ...(options.language ? { language: options.language } : {}),
+      ...(options.signal ? { signal: options.signal } : {}),
+    };
+    const [internal, group, external] = await Promise.all([
+      this.getClassTable({ ...shared, type: "internal" }),
+      this.getClassTable({ ...shared, type: "group" }),
+      this.getClassTable({ ...shared, type: "external" }),
+    ]);
+
+    return {
+      period,
+      classes: [...internal, ...group, ...external],
+      byType: { internal, group, external },
+    };
+  }
+
+  async #getJson(
+    endpoint: "periods" | "classTable",
+    query: Readonly<Record<string, string>>,
+    signal?: AbortSignal,
+  ): Promise<unknown> {
+    if (
+      Date.now() >=
+      this.#bundle.tokens.expiresAt - this.#runtime.refreshMarginMs
+    ) {
+      await this.refresh(signal);
+    }
+    const result = await this.#runtime.getJson(
+      this.#bundle,
+      endpoint,
+      query,
+      signal,
+    );
+    this.#bundle = result.bundle;
+    return result.value;
   }
 }
 

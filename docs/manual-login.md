@@ -144,6 +144,36 @@ const authHeaders = {
 };
 ```
 
+## Reading periods and schedules
+
+Use both authentication headers from the login flow for every request below.
+
+First retrieve the available periods:
+
+```http
+GET https://slcm.ui.ac.id/akademik/api/v1/shared/all-periods
+Authorization: Bearer <access_token>
+x-app-token: <data.userToken>
+```
+
+The response contains `data[]` entries with `year`, `term`, `period`, and
+`value`. It does not contain an active flag and may put a future semester first,
+so do not blindly assume `data[0]` is active. Use `activePeriod` from the login
+session summary as the source of truth, then find the matching entry in this
+list.
+
+Once a period is chosen, request each supported class type separately:
+
+```http
+GET https://slcm.ui.ac.id/akademik/api/v1/class/table?type=internal&year=2026&term=1&lang=id
+GET https://slcm.ui.ac.id/akademik/api/v1/class/table?type=group&year=2026&term=1&lang=id
+GET https://slcm.ui.ac.id/akademik/api/v1/class/table?type=external&year=2026&term=1&lang=id
+```
+
+There is no reliable `type=all` request; fetch the three categories individually
+and combine them in the application. The `periods`, `dates_rooms`, and
+`lecturers` fields can be `null`, even when other rows return arrays.
+
 ## Refreshing tokens
 
 Post to the same token endpoint with:

@@ -1,5 +1,9 @@
 import { SlcmAuthenticationError, SlcmProtocolError } from "../errors.js";
-import type { SlcmTokens, SlcmUserInfo } from "../types.js";
+import type {
+  SlcmActivePeriod,
+  SlcmTokens,
+  SlcmUserInfo,
+} from "../types.js";
 
 interface TokenResponse {
   access_token: string;
@@ -81,7 +85,13 @@ function toTokens(
   };
 }
 
-export function parseXAppTokenResponse(value: unknown): string {
+export interface ParsedUserSession {
+  xAppToken: string;
+  user: SlcmUserInfo | null;
+  activePeriod: SlcmActivePeriod | null;
+}
+
+export function parseUserSessionResponse(value: unknown): ParsedUserSession {
   if (!isRecord(value) || !isRecord(value.data)) {
     throw new SlcmProtocolError("SLCM /user returned an invalid response.");
   }
@@ -91,10 +101,20 @@ export function parseXAppTokenResponse(value: unknown): string {
       "SLCM /user response does not contain data.userToken.",
     );
   }
-  return token;
+  const payload = decodeJwtPayload(token);
+  const user = isRecord(payload?.userInfo) ? payload.userInfo : null;
+  const activePeriod = parseActivePeriod(
+    value.data.activePeriod ??
+      value.data.active_period ??
+      payload?.activePeriod ??
+      payload?.active_period ??
+      user?.activePeriod ??
+      user?.active_period,
+  );
+  return { xAppToken: token, user, activePeriod };
 }
 
-export function decodeXAppToken(token: string): SlcmUserInfo | null {
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const encodedPayload = token.split(".")[1];
   if (!encodedPayload) return null;
 
@@ -102,11 +122,43 @@ export function decodeXAppToken(token: string): SlcmUserInfo | null {
     const payload: unknown = JSON.parse(
       Buffer.from(encodedPayload, "base64url").toString("utf8"),
     );
-    if (!isRecord(payload) || !isRecord(payload.userInfo)) return null;
-    return payload.userInfo;
+    return isRecord(payload) ? payload : null;
   } catch {
     return null;
   }
+}
+
+function parseActivePeriod(value: unknown): SlcmActivePeriod | null {
+  if (typeof value === "string") {
+    const match = /^(\d{4})-([1-3])$/.exec(value.trim());
+    if (!match?.[1] || !match[2]) return null;
+    return {
+      year: Number(match[1]),
+      term: Number(match[2]),
+      period: `${match[1]}-${match[2]}`,
+    };
+  }
+  if (!isRecord(value)) return null;
+
+  const year = value.year;
+  const term = value.term;
+  const period = value.period;
+  if (
+    typeof year !== "number" ||
+    !Number.isInteger(year) ||
+    typeof term !== "number" ||
+    !Number.isInteger(term)
+  ) {
+    return null;
+  }
+  return {
+    year,
+    term,
+    period:
+      typeof period === "string" && period.trim().length > 0
+        ? period.trim()
+        : `${year}-${term}`,
+  };
 }
 
 export async function authenticationFailure(

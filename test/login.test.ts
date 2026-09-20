@@ -17,6 +17,7 @@ test("login completes PKCE, obtains x-app-token, and exposes metadata", async ()
   const calls: Array<{ url: string; init: RequestInit }> = [];
   let expectedState = "";
   const xAppToken = jwt({
+    activePeriod: "2026-1",
     userInfo: {
       username: "student",
       full_name: "Student Example",
@@ -85,6 +86,11 @@ test("login completes PKCE, obtains x-app-token, and exposes metadata", async ()
 
   assert.equal(session.orgCode, "06.00.12.01");
   assert.equal(session.role, "student");
+  assert.deepEqual(session.activePeriod, {
+    year: 2026,
+    term: 1,
+    period: "2026-1",
+  });
   assert.equal(session.user?.full_name, "Student Example");
   assert.equal(session.tokens.accessToken, "access-token");
   assert.deepEqual(await session.getAuthHeaders(), {
