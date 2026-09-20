@@ -109,7 +109,25 @@ docs/
   course-plan.md              Classes taken by the user
   reliability-and-security.md Timeouts, refresh, retries, secrets, validation
 verify-login.mjs              Safe live smoke test
+.github/
+  workflows/
+    ci.yml                    Node 20/24 validation for pushes and pull requests
 ```
+
+## Continuous integration
+
+`.github/workflows/ci.yml` is the required GitHub Actions gate. It runs for
+every pull request and every push to `main`, using both Node.js 20 (the minimum
+supported runtime) and Node.js 24. Each matrix job must:
+
+1. install the pinned pnpm version from `packageManager`;
+2. install dependencies with `--frozen-lockfile`;
+3. run `pnpm run ci`.
+
+Keep the workflow read-only (`contents: read`). Publishing does not belong in
+this workflow. A future npm release workflow must be separate, gated by a
+GitHub Release, and use npm trusted publishing/OIDC rather than a long-lived
+write token.
 
 ## Architecture
 
