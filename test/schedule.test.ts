@@ -10,6 +10,7 @@ const endpoints = {
   activePeriod: "https://slcm.test/class/period",
   periods: "https://slcm.test/all-periods",
   classTable: "https://slcm.test/class/table",
+  myClasses: "https://slcm.test/course-plan/me/classes",
 };
 
 test("schedule uses login activePeriod even when a future period is listed first", async () => {
@@ -75,6 +76,31 @@ test("schedule uses login activePeriod even when a future period is listed first
         message: "Table Class is successfully retrieved",
       });
     }
+    if (url.href === endpoints.myClasses) {
+      assertAuthHeaders(init, xAppToken);
+      return Response.json({
+        data: [
+          {
+            kode_kelas_mk: "820927",
+            nama_kelas_mk: "Anaperancis B",
+            kode_mata_kuliah: "CSIM603183",
+            kode_kurikulum: "06.00.12.01-2024",
+            nama_mata_kuliah: "Analisis dan Perancangan Sistem Informasi ",
+            jumlah_sks: 3,
+            jadwal:
+              "24/08/2026 - 18/12/2026\u001eSelasa, 10:00-11:40\u001eA6.02 (Ged Baru)",
+            teachers:
+              "- Dr. First Lecturer, M.Kom.\n- Second Lecturer, M.Kom.",
+            hide_until: null,
+            periods: ["24/08/2026 - 18/12/2026"],
+            dates: ["Selasa, 10:00-11:40"],
+            rooms: ["A6.02 (Ged Baru)"],
+          },
+        ],
+        message: "Success retrieve course plan checking.",
+        "warning-stale-data": false,
+      });
+    }
     throw new Error(`Unexpected URL: ${url.href}`);
   };
 
@@ -101,6 +127,22 @@ test("schedule uses login activePeriod even when a future period is listed first
   assert.deepEqual(schedule.byType.external[0]?.meetings, []);
   assert.deepEqual(schedule.byType.external[0]?.lecturers, []);
   assert.equal(schedule.byType.group[0]?.type, "group");
+
+  const myClasses = await session.getMyClasses();
+  assert.equal(myClasses.warningStaleData, false);
+  assert.equal(myClasses.classes.length, 1);
+  assert.equal(myClasses.classes[0]?.courseName, "Analisis dan Perancangan Sistem Informasi");
+  assert.deepEqual(myClasses.classes[0]?.teachers, [
+    "Dr. First Lecturer, M.Kom.",
+    "Second Lecturer, M.Kom.",
+  ]);
+  assert.deepEqual(myClasses.classes[0]?.meetings, [
+    {
+      period: "24/08/2026 - 18/12/2026",
+      date: "Selasa, 10:00-11:40",
+      room: "A6.02 (Ged Baru)",
+    },
+  ]);
 });
 
 function classFixture(type: SlcmClassType): Record<string, unknown> {

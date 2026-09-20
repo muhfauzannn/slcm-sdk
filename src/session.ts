@@ -3,6 +3,7 @@ import type {
   SlcmActivePeriodOptions,
   SlcmClass,
   SlcmClassTableOptions,
+  SlcmMyClasses,
   SlcmPeriod,
   SlcmSchedule,
   SlcmScheduleOptions,
@@ -13,6 +14,7 @@ import type {
 import {
   parseClassTableResponse,
   parsePeriodsResponse,
+  parseMyClassesResponse,
   resolveActivePeriod,
 } from "./internal/schedule-protocol.js";
 
@@ -32,7 +34,7 @@ interface SessionRuntime {
   refreshMarginMs: number;
   getJson(
     bundle: SessionBundle,
-    endpoint: "periods" | "classTable",
+    endpoint: "periods" | "classTable" | "myClasses",
     query: Readonly<Record<string, string>>,
     signal?: AbortSignal,
   ): Promise<{ bundle: SessionBundle; value: unknown }>;
@@ -168,8 +170,13 @@ export class SlcmSession {
     };
   }
 
+  async getMyClasses(signal?: AbortSignal): Promise<SlcmMyClasses> {
+    const value = await this.#getJson("myClasses", {}, signal);
+    return parseMyClassesResponse(value);
+  }
+
   async #getJson(
-    endpoint: "periods" | "classTable",
+    endpoint: "periods" | "classTable" | "myClasses",
     query: Readonly<Record<string, string>>,
     signal?: AbortSignal,
   ): Promise<unknown> {

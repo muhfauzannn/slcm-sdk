@@ -77,7 +77,7 @@ export class SlcmClient {
 
   async #getJson(
     current: SessionBundle,
-    endpoint: "periods" | "classTable",
+    endpoint: "periods" | "classTable" | "myClasses",
     query: Readonly<Record<string, string>>,
     signal?: AbortSignal,
   ): Promise<{ bundle: AuthenticatedBundle; value: unknown }> {

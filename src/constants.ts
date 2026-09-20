@@ -12,6 +12,7 @@ export const SLCM_ENDPOINTS: Readonly<SlcmEndpoints> = Object.freeze({
   activePeriod: `${SLCM_BASE_URL}/akademik/api/v1/class/period`,
   periods: `${SLCM_BASE_URL}/akademik/api/v1/shared/all-periods`,
   classTable: `${SLCM_BASE_URL}/akademik/api/v1/class/table`,
+  myClasses: `${SLCM_BASE_URL}/akademik/api/course-plan/me/classes`,
 });
 
 export const DEFAULT_USER_AGENT =

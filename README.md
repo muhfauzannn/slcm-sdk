@@ -114,6 +114,27 @@ const internal = await session.getClassTable({
 });
 ```
 
+### Classes taken by the user
+
+The class-table methods above return classes offered to the account, including
+classes the user did not take. Use `getMyClasses()` for the user's current
+course-plan classes:
+
+```ts
+const myClasses = await session.getMyClasses();
+
+console.log(myClasses.warningStaleData);
+for (const courseClass of myClasses.classes) {
+  console.log(courseClass.courseName, courseClass.className);
+  console.log(courseClass.teachers);
+  console.log(courseClass.meetings);
+}
+```
+
+Each meeting contains a date range, day/time, and room. The API's
+`warning-stale-data` flag is preserved as `warningStaleData` so applications can
+warn users when the portal reports cached data.
+
 ## Refreshing a session
 
 ```ts
@@ -197,6 +218,7 @@ session, so one client can safely log in multiple accounts concurrently.
   `all-periods`.
 - `getClassTable(options)` — load one class category for a period.
 - `getSchedule(options?)` — load and combine all three class categories.
+- `getMyClasses(signal?)` — load only classes in the user's course plan.
 
 Treat every token and snapshot as a secret. Do not send them to a browser,
 include them in logs, or store them without appropriate encryption and access
@@ -258,4 +280,5 @@ unset SSO_UI_USERNAME SSO_UI_PASSWORD
 ```
 
 The verifier prints account metadata, boolean token checks, the selected active
-period, and class counts. It never prints the password or token values.
+period, offered-class counts, and the user's taken-class count. It never prints
+the password, token values, or class details.

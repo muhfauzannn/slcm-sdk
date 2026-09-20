@@ -175,6 +175,19 @@ There is no reliable `type=all` request; fetch the three categories individually
 and combine them in the application. The `periods`, `dates_rooms`, and
 `lecturers` fields can be `null`, even when other rows return arrays.
 
+To retrieve only classes currently taken by the logged-in user:
+
+```http
+GET https://slcm.ui.ac.id/akademik/api/course-plan/me/classes
+Authorization: Bearer <access_token>
+x-app-token: <data.userToken>
+```
+
+Its response uses Indonesian field names and includes parallel `periods`,
+`dates`, and `rooms` arrays. Match entries by array index to form each meeting.
+The top-level `warning-stale-data` boolean must be preserved because it tells the
+consumer whether SLCM considers the returned course-plan data stale.
+
 ## Refreshing tokens
 
 Post to the same token endpoint with:

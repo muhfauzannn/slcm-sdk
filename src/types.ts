@@ -14,6 +14,7 @@ export interface SlcmEndpoints {
   activePeriod: string;
   periods: string;
   classTable: string;
+  myClasses: string;
 }
 
 export interface SlcmClientOptions {
@@ -127,4 +128,29 @@ export interface SlcmSchedule {
   period: SlcmPeriod;
   classes: SlcmClass[];
   byType: Record<SlcmClassType, SlcmClass[]>;
+}
+
+export interface SlcmMeeting {
+  period: string;
+  date: string;
+  room: string;
+}
+
+export interface SlcmEnrolledClass {
+  classCode: string;
+  className: string;
+  courseCode: string;
+  courseName: string;
+  curriculumCode: string;
+  credits: number;
+  meetings: SlcmMeeting[];
+  teachers: string[];
+  hideUntil: string | null;
+  /** Original SLCM schedule text, retained for diagnostics and display parity. */
+  scheduleText: string;
+}
+
+export interface SlcmMyClasses {
+  classes: SlcmEnrolledClass[];
+  warningStaleData: boolean;
 }

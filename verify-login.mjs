@@ -21,7 +21,10 @@ const client = new SlcmClient({
 try {
   const session = await client.login({ username, password });
   const activePeriod = await session.getActivePeriod();
-  const schedule = await session.getSchedule({ period: activePeriod });
+  const [schedule, myClasses] = await Promise.all([
+    session.getSchedule({ period: activePeriod }),
+    session.getMyClasses(),
+  ]);
 
   console.log({
     success: true,
@@ -37,6 +40,10 @@ try {
       group: schedule.byType.group.length,
       external: schedule.byType.external.length,
       total: schedule.classes.length,
+    },
+    myClasses: {
+      count: myClasses.classes.length,
+      warningStaleData: myClasses.warningStaleData,
     },
   });
 } catch (error) {
