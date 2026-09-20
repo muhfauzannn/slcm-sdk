@@ -112,6 +112,7 @@ verify-login.mjs              Safe live smoke test
 .github/
   workflows/
     ci.yml                    Node 20/24 validation for pushes and pull requests
+    publish.yml               npm release publishing through trusted OIDC
 ```
 
 ## Continuous integration
@@ -125,9 +126,24 @@ supported runtime) and Node.js 24. Each matrix job must:
 3. run `pnpm run ci`.
 
 Keep the workflow read-only (`contents: read`). Publishing does not belong in
-this workflow. A future npm release workflow must be separate, gated by a
-GitHub Release, and use npm trusted publishing/OIDC rather than a long-lived
-write token.
+this workflow.
+
+`.github/workflows/publish.yml` is the separate npm release workflow. It runs
+only when a GitHub Release is published, checks out that release's tag, and
+requires the tag to equal `v<package.json version>` before calling
+`npm publish`. The package's `prepublishOnly` script runs the complete CI gate
+before npm uploads anything. Publishing uses npm trusted publishing/OIDC with
+`id-token: write`; never add a long-lived `NPM_TOKEN`. Keep release builds on a
+Node/npm combination supported by npm trusted publishing.
+
+Before the first automated release, configure the package's trusted publisher
+on npm for GitHub user `muhfauzannn`, repository `slcm-sdk`, and workflow
+filename `publish.yml`. Do not configure a GitHub environment unless the same
+environment name is added to both the workflow job and npm trusted publisher.
+
+Release versions are immutable. To release after `0.1.0`, update the package
+version, commit it, let CI pass, and create a GitHub Release whose tag is the
+matching `v`-prefixed version (for example, package `0.1.1` uses tag `v0.1.1`).
 
 Pin every third-party GitHub Action to its immutable, full 40-character commit
 SHA. Keep the corresponding release tag in an inline comment so dependency

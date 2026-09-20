@@ -11,6 +11,10 @@
     "url": "https://github.com/muhfauzannn/slcm-sdk/issues"
   },
   "homepage": "https://github.com/muhfauzannn/slcm-sdk#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.cjs",
