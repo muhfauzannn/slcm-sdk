@@ -36,7 +36,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --sourcemap --clean",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "tsx --test test/*.test.ts",
     "ci": "pnpm typecheck && pnpm test && pnpm build",
     "verify:login": "pnpm build && node verify-login.mjs",
     "prepublishOnly": "pnpm run ci"

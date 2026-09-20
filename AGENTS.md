@@ -327,6 +327,10 @@ wins. Fix the parser, fixtures, and every affected document together.
 ## Testing rules
 
 - Tests must never contact live SLCM.
+- Keep `*.test.ts` files directly inside `test/`. The package test script uses a
+  flat glob because Node.js 20 does not expand the recursive `**` pattern
+  consistently. If tests become nested, replace the runner command with a
+  cross-version discovery mechanism in the same change.
 - Use injected `fetch` and realistic sanitized fixtures.
 - Assert credentials are not leaked through provider error messages.
 - Assert OIDC state and redirect validation.
