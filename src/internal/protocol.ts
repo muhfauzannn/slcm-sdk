@@ -88,7 +88,6 @@ function toTokens(
 export interface ParsedUserSession {
   xAppToken: string;
   user: SlcmUserInfo | null;
-  activePeriod: SlcmActivePeriod | null;
 }
 
 export function parseUserSessionResponse(value: unknown): ParsedUserSession {
@@ -103,15 +102,7 @@ export function parseUserSessionResponse(value: unknown): ParsedUserSession {
   }
   const payload = decodeJwtPayload(token);
   const user = isRecord(payload?.userInfo) ? payload.userInfo : null;
-  const activePeriod = parseActivePeriod(
-    value.data.activePeriod ??
-      value.data.active_period ??
-      payload?.activePeriod ??
-      payload?.active_period ??
-      user?.activePeriod ??
-      user?.active_period,
-  );
-  return { xAppToken: token, user, activePeriod };
+  return { xAppToken: token, user };
 }
 
 export function parseActivePeriodResponse(value: unknown): SlcmActivePeriod {

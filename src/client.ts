@@ -312,9 +312,11 @@ export class SlcmClient {
     const parsed = parseUserSessionResponse(
       await readJson(response, "SLCM /user"),
     );
-    const activePeriod =
-      parsed.activePeriod ??
-      (await this.#loadActivePeriod(tokens, parsed.xAppToken, signal));
+    const activePeriod = await this.#loadActivePeriod(
+      tokens,
+      parsed.xAppToken,
+      signal,
+    );
     return { tokens, ...parsed, activePeriod };
   }
 
